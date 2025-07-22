@@ -33,6 +33,9 @@ var (
 	// Conjunto para armazenar URLs já visitadas para evitar processamento duplicado
 	visitedURLs = make(map[string]bool)
 
+	// Slice para armazenar todas as URLs de marketing encontradas
+	marketingURLs []ScrapedURL
+
 	// Regex (expressões regulares) para filtar URLs de marketing
 	marketingKeywords = regexp.MustCompile(`(?i)(marketing|blog|content|digital|seo|sem|social|inbound|outbound|growth|strategy|conversion|branding)`)
 
@@ -101,7 +104,7 @@ func main() {
 		mu.Unlock()
 
 		// Parse da URL para verificar se é válida e dentro dos domínios permitidos
-		parsedURL, err := url.Parse(absoluteURL)
+		parsedURL, err := url.Parse(absoluteURL) // Tenta analisar (parsear) a URL. Se ela for malformada ou inválida (err != nil), a função simplesmente ignora esse link (return).
 		if err != nil {
 			return
 		}
@@ -115,7 +118,47 @@ func main() {
 		}
 
 		if !isValidDomain {
-			return // Ignora links para domínios não permitidos.
+			return // Ignora links para domínios não permitidos. Isso evita que seu crawler "fuja" do escopo e comece a vasculhar a internet inteira.
+		}
+
+		// Verifica se a URL contém palavras-chave de marketing e não é um link para arquivos
+		if marketingKeywords.MatchString(absoluteURL) && !strings.Contains(absoluteURL, ".pdf") && !strings.Contains(absoluteURL, ".zip") && !strings.Contains(absoluteURL, ".doc") {
+			mu.Lock()
+			marketingURLs = append(marketingURLs, ScrapedURL{
+				URL:         absoluteURL,
+				Source:      e.Request.URL.Hostname(),
+				FoundOnPage: e.Request.URL.String(),
+				Timestamp:   time.Now().Format(time.RFC3339),
+			})
+			mu.Unlock()
+		}
+
+		// Visita o link se ele for relevante e não for um arquivo estático
+		// Colly lida com a lógica de recursão e visita de links
+		if !strings.Contains(absoluteURL, ".css") && !strings.Contains(absoluteURL, ".js") && !strings.Contains(absoluteURL, ".png") && !strings.Contains(absoluteURL, ".jpg") && !strings.Contains(absoluteURL, ".gif") {
+			e.Request.Visit(link) //Caso todos os requisitos batam o colly visita o link e encontra novas possíveis urls para recomcar o ciclo, daí a recursão que o Colly resolve sozinho.
 		}
 	})
+
+	// OnError é chamado se ocorrer um erro durante a requisicão
+	c.OnError(func(_ *colly.Response, err error) {
+		fmt.Printf("Error when visiting: %v\n", err)
+	})
+
+	// Loop através das URLs iniciais e inicia o crawling.
+	for _, u := range seedURLs {
+		c.Visit(u)
+	}
+
+	// Espera até que todas as goroutines do Colly terminem.
+	c.Wait()
+
+	fmt.Printf("\nCrawiling finished. It found %d URLs with marketing content.\n", len(marketingURLs))
+
+	// Salva as URLs coletadas em um arquivo JSON
+	if err := saveURLs(marketingURLs, "marketing_urls.json"); err != nil {
+		fmt.Printf("Error saving URLs: %v\n", err)
+	} else {
+		fmt.Println("URLs saved in marketing_urls.json file.")
+	}
 }
