@@ -25,7 +25,8 @@ type ScrapedURL struct {
 var (
 	// Esse é um semáforo para limitar o número de workers concorrentes
 	//isso evita sobrecarregar o site alvo ou minha máquina
-	concurrentWorkers = make(chan struct{}, 10) // Limite de 10 workers simultâneos
+	// Esse concurrentWorkers não é realmente necessário já que o Colly já implementa seu próprio e sofisticado sistema de controle de concorrência e paralelismo internamente.
+	//concurrentWorkers = make(chan struct{}, 10) // Limite de 10 workers simultâneos
 
 	// Mutex é usado para proteger, bloquear alguma alteracao num channel quando um goroutine está mexendo naquele channel para que não haja race conditions.
 	//O jeito que o Mutex faz isso é simplesmente sincronizando o recebedor e o rementente de um dado do channel.
@@ -68,16 +69,17 @@ func main() {
 	c := colly.NewCollector(
 		// Permite a recursão (seguir links)
 		colly.AllowURLRevisit(),
-		// Limita o número de threads paralelas. Colly gerencia isso internamente com goroutines.
-		colly.Async(true),
+
+		colly.Async(true), // Esta opção instrui o Colly a usar goroutines para processar as requisições de forma assíncrona, gerenciando a fila de trabalho e a execução paralela de forma eficiente.
+
 		// User-Agent para simular um navegador real
 		colly.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebkit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"),
 	)
 
 	// Configuracoes de limite de concorrência para o coletor
 	c.Limit(&colly.LimitRule{
-		DomainGlob:  "*",             // Aplica a todos os domínios
-		Parallelism: 5,               // 5 requisicoes paralelas por domínio
+		DomainGlob:  "*",             // Aplica a todos os domínios.
+		Parallelism: 10,              // 10 requisicoes paralelas por domínio.
 		Delay:       1 * time.Second, // Define o atrase entre as requisicões para evitar ser bloqueado.
 	})
 
@@ -152,7 +154,7 @@ func main() {
 		c.Visit(u)
 	}
 
-	// Espera até que todas as goroutines do Colly terminem.
+	// Espera até que todas as goroutines do Colly terminem antes que o programa principal continue.
 	c.Wait()
 
 	fmt.Printf("\nCrawiling finished. It found %d URLs with marketing content.\n", len(marketingURLs))
