@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -161,4 +163,20 @@ func main() {
 	} else {
 		fmt.Println("URLs saved in marketing_urls.json file.")
 	}
+}
+
+// saveURLs salva a slice de ScrapedURL em um arquivo JSON.
+func saveURLs(urls []ScrapedURL, filename string) error {
+	file, err := os.Create(filename)
+	if err != nil {
+		return fmt.Errorf("there was an error creating file %s: %w", filename, err)
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ") // Formatacão bonita do JSON
+	if err := encoder.Encode(urls); err != nil {
+		return fmt.Errorf("there was an error enconding the URLs to JSON: %w", err)
+	}
+	return nil
 }
