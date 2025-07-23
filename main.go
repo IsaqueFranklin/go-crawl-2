@@ -110,6 +110,7 @@ var (
 		"ecommerce.org.br",
 		"conradoadolpho.com",
 	}
+	// o código não estava rodando e eu achei que fossem inúmeras coisas, entretanto era apenas que o allowed domains precisa ser apenas o domínio raiz, sem firulas.
 )
 
 func main() {
@@ -162,7 +163,7 @@ func main() {
 		if err != nil {
 			return
 		}
-		fmt.Println("Eis o parsedURL: ", parsedURL)
+
 		isValidDomain := false
 		for _, domain := range allowedDomains {
 			if strings.Contains(parsedURL.Hostname(), domain) {
