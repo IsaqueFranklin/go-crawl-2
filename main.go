@@ -42,13 +42,38 @@ var (
 	// Regex (expressões regulares) para filtar URLs de marketing
 	marketingKeywords = regexp.MustCompile(`(?i)(marketing|blog|content|digital|seo|sem|social|inbound|outbound|growth|strategy|conversion|branding)`)
 
-	// Domínios iniciais para o crawler
+	// Domínios iniciais para o crawler. Lista expandida!
 	seedURLs = []string{
-		"neilpatel.com",
-		"moz.com",
-		"hubspot.com",
-		"rockcontent.com",
-		"searchenginejournal.com",
+		"https://neilpatel.com/blog/",
+		"https://moz.com/blog",
+		"https://www.hubspot.com/marketing",
+		"https://blog.rockcontent.com/br/",
+		"https://www.searchenginejournal.com/",
+		"https://contentmarketinginstitute.com/",
+		"https://adespresso.com/blog/",
+		"https://blog.hootsuite.com/",
+		"https://blog.rdstation.com/",
+		"https://resultadosdigitais.com.br/blog/",
+		"https://www.semrush.com/blog/",
+		"https://marketingdeconteudo.com/",
+		"https://klickpages.com.br/blog/",
+		"https://www.vtex.com/pt-br/blog/",
+		"https://ecommercenapratica.com/blog/",
+		"https://shopify.com.br/blog/",
+		"https://marketing.substack.com/",
+		"https://growthhackers.com/blog/",
+		"https://www.martechalliance.com/blog",
+		"https://blog.agenciaeplus.com.br/",
+		"https://www.mktdigital.com.br/blog/",
+		"https://www.ecommercebrasil.com.br/artigos/",
+		"https://ecommercefluente.com.br/",
+		"https://mundodomarketing.com.br/",
+		"https://sebrae.com.br/sites/PortalSebrae/cursosonline/como-fazer-marketing-digital-para-sua-empresa,2a9fe47f1c070410VgnVCM1000004c00210aRCRD",
+		"https://www.hostgator.com.br/blog/marketing-digital/",
+		"https://digitalhouse.com/br/blog/marketing-digital/",
+		"https://www.alura.com.br/artigos/marketing-digital",
+		"https://www.ecommerce.org.br/artigos",
+		"https://conradoadolpho.com/blog/",
 	}
 
 	// Domínios para os quais o crawler está permitido a seguir links
@@ -57,8 +82,33 @@ var (
 		"neilpatel.com",
 		"moz.com",
 		"hubspot.com",
-		"rockcontent.com",
+		"blog.rockcontent.com",
 		"searchenginejournal.com",
+		"contentmarketinginstitute.com",
+		"adespresso.com",
+		"blog.hootsuite.com",
+		"blog.rdstation.com",
+		"resultadosdigitais.com.br",
+		"semrush.com",
+		"marketingdeconteudo.com",
+		"klickpages.com.br",
+		"vtex.com",
+		"ecommercenapratica.com",
+		"shopify.com.br",
+		"marketing.substack.com",
+		"growthhackers.com",
+		"martechalliance.com",
+		"blog.agenciaeplus.com.br",
+		"mktdigital.com.br",
+		"ecommercebrasil.com.br",
+		"ecommercefluente.com.br",
+		"mundodomarketing.com.br",
+		"sebrae.com.br",
+		"hostgator.com.br",
+		"digitalhouse.com",
+		"alura.com.br",
+		"ecommerce.org.br",
+		"conradoadolpho.com",
 	}
 )
 
@@ -73,14 +123,14 @@ func main() {
 		colly.Async(true), // Esta opção instrui o Colly a usar goroutines para processar as requisições de forma assíncrona, gerenciando a fila de trabalho e a execução paralela de forma eficiente.
 
 		// User-Agent para simular um navegador real
-		colly.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebkit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"),
+		colly.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36"),
 	)
 
 	// Configuracoes de limite de concorrência para o coletor
 	c.Limit(&colly.LimitRule{
-		DomainGlob:  "*",             // Aplica a todos os domínios.
-		Parallelism: 10,              // 10 requisicoes paralelas por domínio.
-		Delay:       1 * time.Second, // Define o atrase entre as requisicões para evitar ser bloqueado.
+		DomainGlob:  "*",              // Aplica a todos os domínios.
+		Parallelism: 10,               // 10 requisicoes paralelas por domínio.
+		Delay:       10 * time.Second, // Define o atrase entre as requisicões para evitar ser bloqueado.
 	})
 
 	// Define os domínios permitidos
@@ -112,7 +162,7 @@ func main() {
 		if err != nil {
 			return
 		}
-
+		fmt.Println("Eis o parsedURL: ", parsedURL)
 		isValidDomain := false
 		for _, domain := range allowedDomains {
 			if strings.Contains(parsedURL.Hostname(), domain) {
