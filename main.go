@@ -33,6 +33,10 @@ var (
 	//Nesse caso o Mutex é para proteger o mapa de URLs visitadas e a slice de URLs encontradas.
 	mu sync.Mutex
 
+	// Contador para controlar o envio de e-mails por número de links
+	lastEmailCount int        // Armazena a contagem de links na qual o último e-mail foi enviado
+	emailThreshold = 20000000 // Enviar e-mail a cada 200 novos links coletados
+
 	// Conjunto para armazenar URLs já visitadas para evitar processamento duplicado
 	visitedURLs = make(map[string]bool)
 
@@ -115,7 +119,7 @@ var (
 
 func main() {
 	fmt.Println("Starting the Web Crawler for Marketing websites...")
-	sendEmail("a test bitch")
+
 	// Inicializa o coletor Colly
 	c := colly.NewCollector(
 		// Permite a recursão (seguir links)
@@ -129,9 +133,9 @@ func main() {
 
 	// Configuracoes de limite de concorrência para o coletor
 	c.Limit(&colly.LimitRule{
-		DomainGlob:  "*",              // Aplica a todos os domínios.
-		Parallelism: 10,               // 10 requisicoes paralelas por domínio.
-		Delay:       10 * time.Second, // Define o atrase entre as requisicões para evitar ser bloqueado.
+		DomainGlob:  "*",             // Aplica a todos os domínios.
+		Parallelism: 10,              // 10 requisicoes paralelas por domínio.
+		Delay:       1 * time.Second, // Define o atrase entre as requisicões para evitar ser bloqueado.
 	})
 
 	// Define os domínios permitidos
@@ -185,6 +189,14 @@ func main() {
 				FoundOnPage: e.Request.URL.String(),
 				Timestamp:   time.Now().Format(time.RFC3339),
 			})
+
+			currentCount := len(marketingURLs) // Pega a contagem atual
+			if currentCount >= (lastEmailCount + emailThreshold) {
+				messageBody := fmt.Sprintf("You have more than %d crawled links saved.", len(marketingURLs))
+				messageBody2 := fmt.Sprintf("This is the currentCount: %d", currentCount)
+				sendEmail(messageBody + messageBody2)
+				lastEmailCount = currentCount // Atualiza o contador de último e-mail enviado
+			}
 			mu.Unlock()
 		}
 

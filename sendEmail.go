@@ -21,7 +21,7 @@ func sendEmail(logs string) {
 	from := os.Getenv("EMAIL_FROM")
 	password := os.Getenv("EMAIL_PASSWORD")
 	toRaw := os.Getenv("EMAIL_TO")
-	subject := "Crawling Logs"
+	subject := "Crawling Logs from Termux SSH"
 	body := logs
 
 	// Validação básica para garantir que as variáveis foram carregadas
