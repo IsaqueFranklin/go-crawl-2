@@ -115,7 +115,7 @@ var (
 
 func main() {
 	fmt.Println("Starting the Web Crawler for Marketing websites...")
-
+	sendEmail("a test bitch")
 	// Inicializa o coletor Colly
 	c := colly.NewCollector(
 		// Permite a recursão (seguir links)
